@@ -1,10 +1,23 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
+import { DiagnosticsPage } from './pages/DiagnosticsPage'
+
+// TEMPORARY hash route for the F03 checkpoint; replaced by the router in F04.
+const DIAGNOSTICS_HASH = '#/diagnostics'
 
 function App() {
   const [count, setCount] = useState(0)
+  const [hash, setHash] = useState(window.location.hash)
+
+  useEffect(() => {
+    const onHashChange = () => setHash(window.location.hash)
+    window.addEventListener('hashchange', onHashChange)
+    return () => window.removeEventListener('hashchange', onHashChange)
+  }, [])
+
+  if (hash === DIAGNOSTICS_HASH) return <DiagnosticsPage />
 
   return (
     <>

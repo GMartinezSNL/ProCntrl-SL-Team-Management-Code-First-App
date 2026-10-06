@@ -11,5 +11,46 @@
   "localAppUrl": "http://localhost:3000",
   "logoPath": "Default",
   "connectionReferences": {},
-  "databaseReferences": {}
+  "databaseReferences": {
+    "default.cds": {
+      "dataSources": {
+        "users": {
+          "entitySetName": "systemusers",
+          "logicalName": "systemuser",
+          "isHidden": false
+        },
+        "roles": {
+          "entitySetName": "mpm_roles",
+          "logicalName": "mpm_role",
+          "isHidden": false
+        },
+        "disciplines": {
+          "entitySetName": "mpm_disciplines",
+          "logicalName": "mpm_discipline",
+          "isHidden": false
+        },
+        "projects": {
+          "entitySetName": "cre9c_projects",
+          "logicalName": "cre9c_project",
+          "isHidden": false
+        },
+        "teammanagementrequests": {
+          "entitySetName": "mpm_teammanagementrequests",
+          "logicalName": "mpm_teammanagementrequest",
+          "isHidden": false
+        },
+        "environmentvariabledefinitions": {
+          "entitySetName": "environmentvariabledefinitions",
+          "logicalName": "environmentvariabledefinition",
+          "isHidden": false
+        },
+        "environmentvariablevalues": {
+          "entitySetName": "environmentvariablevalues",
+          "logicalName": "environmentvariablevalue",
+          "isHidden": false
+        }
+      },
+      "environmentVariableName": ""
+    }
+  }
 }
