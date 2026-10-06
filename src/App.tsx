@@ -1,48 +1,16 @@
-import { useEffect, useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
-import { DiagnosticsPage } from './pages/DiagnosticsPage'
-
-// TEMPORARY hash route for the F03 checkpoint; replaced by the router in F04.
-const DIAGNOSTICS_HASH = '#/diagnostics'
+import { RouterProvider } from 'react-router-dom';
+import { router } from './routes';
+import { RequestProvider } from './state/requestStore';
+import { FluentThemeProvider } from './theme/FluentThemeProvider';
 
 function App() {
-  const [count, setCount] = useState(0)
-  const [hash, setHash] = useState(window.location.hash)
-
-  useEffect(() => {
-    const onHashChange = () => setHash(window.location.hash)
-    window.addEventListener('hashchange', onHashChange)
-    return () => window.removeEventListener('hashchange', onHashChange)
-  }, [])
-
-  if (hash === DIAGNOSTICS_HASH) return <DiagnosticsPage />
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <FluentThemeProvider>
+      <RequestProvider>
+        <RouterProvider router={router} />
+      </RequestProvider>
+    </FluentThemeProvider>
+  );
 }
 
-export default App
+export default App;

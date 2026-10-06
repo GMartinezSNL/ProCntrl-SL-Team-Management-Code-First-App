@@ -1,0 +1,1 @@
+export { SelectedPersonBox } from './SelectedPersonBox';

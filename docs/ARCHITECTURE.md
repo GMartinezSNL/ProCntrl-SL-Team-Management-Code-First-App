@@ -9,7 +9,7 @@ Stack: React + TypeScript (strict) + Vite, Power Apps code apps client library, 
 src/
   main.tsx                  React root; imports theme CSS; mounts <App/>
   App.tsx                   Providers (Theme > UI > Request > Submit) + router
-  routes.tsx                Route table + guards (section 2)
+  routes.tsx                Hash route table (section 2); routeElements.tsx holds Guard + HelpTopicRoute
   config.ts                 THE single config file: choice values, limits, flags D1-D3, theme fallbacks, route paths
   content/helpContent.ts    Help text as data (headings + paragraphs), used by Help pages and Help panel
   pages/                    One folder per page: <Name>Page/<Name>Page.tsx + index.ts (+ .test.tsx in F13)
@@ -18,14 +18,15 @@ src/
     ExistingProjectsPage, ExistingReviewPage, SuccessPage,
     HelpHomePage, HelpTopicPage (onboarding/offboarding/updating by param)
   components/               One folder per component + index.ts barrel
-    AppShell, Header, StepIndicator, PageActions (Back/Continue bar), Button, IconButton,
-    Card, ReviewCard, SelectedPersonBox, StatusBadge, Avatar, PersonSearchBox,
-    Select, Toggle, ChipGroup, ProjectMultiSelect, FieldError, ConfirmDialog,
-    HelpPanel, HelpContent, Toast, EmptyState, Skeleton, Confetti, CheckDraw
+    App-specific only (spec section 15); pages use Fluent UI v9 controls directly for the rest:
+    AppShell, Header, StepIndicator, PageActions (Back/Continue bar), WizardLayout,
+    RequestSummary (U8), SelectedPersonBox, ReviewCard, HelpContent, Confetti, CheckDraw,
+    HeroBanner
   state/
-    requestStore.tsx        Request-in-progress context + reducer + reset() (section 3)
-    submitStore.tsx         Submit engine state + runner (section 5)
-    uiStore.tsx             Color scheme (persisted), help panel open/tab, nav direction
+    request.ts              Request state, defaults, reducer, selectors (pure; section 3)
+    requestStore.tsx        RequestProvider + useRequest() (reset(), isDirty)
+    guards.ts               Pure guardRedirect() for route guards (section 2)
+    submitStore.tsx         Submit engine state + runner (section 5, F07)
   data/
     dataService.ts          Public data functions (section 4); only file that imports src/generated
     payloads.ts             Pure builders for W1-W4 bodies (field allowlists)
@@ -34,13 +35,15 @@ src/
     types.ts                Person, Role, Discipline, Project, ThemeColors, OnboardStatus
     DataError.ts            Error class (section 5)
   theme/
-    tokens.css              Static tokens: spacing, radius, shadow, type, neutrals, motion
-    global.css              Reset, focus ring, base elements, reduced-motion rules
-    themeColors.ts          Pure math: fade, luminance, contrast, darken, derived vars
-    ThemeProvider.tsx       Loads getTheme() once, writes CSS vars on <html>, sets data-theme
+    brandRamp.ts            Pure: Main -> Fluent BrandVariants, contrast helpers (uses data/theme.ts fade)
+    FluentThemeProvider.tsx Loads getTheme() once, light/dark Fluent themes, color-scheme toggle (persisted), --tm-* vars
+    layout.ts               Media queries from config breakpoints (use non-overlapping ranges: Griffel doesn't sort them)
+    motion.ts               Shared Griffel keyframes (F10)
+    global.css              Minimal reset + .visually-hidden only
   hooks/
+    useAppNavigate.ts (direction-aware navigate), useMediaQuery.ts, useScrolled.ts,
     useDebouncedValue.ts, usePersonSearch.ts (debounce + stale-response drop),
-    useReducedMotion.ts, useAnnounce.ts (aria-live), useStepGuard.ts, useScrolled.ts
+    useReducedMotion.ts, useAnnounce.ts (aria-live)
   assets/logo.png           Copied in by the user
   generated/                CLI-owned. Never edit by hand.
 ```
@@ -49,20 +52,20 @@ Rules: pages own layout and navigation; components are presentational; only `dat
 
 ## 2. Route map
 
-Router: `createHashRouter` (react-router-dom). Hash URLs need no server rewrites inside the Power Apps host and keep browser Back working.
+Router: `createHashRouter` (react-router-dom). Hash URLs need no server rewrites inside the Power Apps host and keep browser Back working. Paths live in `ROUTES` in `config.ts` (`#/person`, `#/new/details`, ... per spec section 13); unknown paths go Home. Guards: `state/guards.ts` (pure) + `Guard` in `routeElements.tsx`.
 Guards run in a route `loader`-free wrapper (`useStepGuard`) that redirects with `replace` to the earliest unmet step; with no person, it goes Home.
 
 | Page | Route | Title | Step | Back | Continue / main action | Guard |
 |---|---|---|---|---|---|---|
 | Home | `/` | Team Management App | - | - | Onboard (reset, Person) / Offboard, Update (Under Construction) / Help (Help Home) | none |
 | Under Construction | `/under-construction` | Team Management App | - | Home | Home button | none |
-| Person search | `/onboard/person` | Onboard User | 1 | Home | Start Onboard: re-read status, then Status or New Details | none |
-| Status | `/onboard/status` | Onboard Team Member | - | Person (selection kept) | Home (reset) / Project-Specific Onboard -> Existing Projects | person and status is Onboard or In-Progress |
-| New Details | `/onboard/new/details` | Onboard User | 2 of 4 | Person | New Projects (blocks until valid) | person, path = new |
-| New Projects | `/onboard/new/projects` | Onboard User | 3 of 4 | New Details | New Review | details valid |
-| New Review | `/onboard/new/review` | Onboard User | 4 of 4 | Cancel -> New Details | Confirm -> W1-W3 | details valid |
-| Existing Projects | `/onboard/existing/projects` | Project Onboard | 2 of 3 | Status | Existing Review (needs 1+ project) | person, path = existing |
-| Existing Review | `/onboard/existing/review` | Project Onboard | 3 of 3 | Cancel -> Existing Projects | Confirm -> W4 | 1+ existing project |
+| Person search | `/person` | Onboard User | 1 | Home | Start Onboard: re-read status, then Status or New Details | none |
+| Status | `/status` | Onboard Team Member | - | Person (selection kept) | Home (reset) / Project-Specific Onboard -> Existing Projects | person and status is Onboard or In-Progress |
+| New Details | `/new/details` | Onboard User | 2 of 4 | Person | New Projects (blocks until valid) | person, path = new |
+| New Projects | `/new/projects` | Onboard User | 3 of 4 | New Details | New Review | details valid |
+| New Review | `/new/review` | Onboard User | 4 of 4 | Cancel -> New Details | Confirm -> W1-W3 | details valid |
+| Existing Projects | `/existing/projects` | Project Onboard | 2 of 3 | Status | Existing Review (needs 1+ project) | person, path = existing |
+| Existing Review | `/existing/review` | Project Onboard | 3 of 3 | Cancel -> Existing Projects | Confirm -> W4 | 1+ existing project |
 | Success | `/success` | Team Management App | - | - | Return to Home (reset) | `lastSubmission` set, else Home |
 | Help Home | `/help` | Help Page | - | Home | Onboarding / Offboarding / Updating | none |
 | Help topic | `/help/:topic` (`onboarding`, `offboarding`, `updating`) | Help Page - Onboarding / Offboarding / Updating Users | - | Help Home | - | unknown topic -> Help Home |
@@ -74,7 +77,7 @@ Nav direction (forward/back) is set by PageActions and read by the page transiti
 
 ## 3. Request store
 
-React Context + `useReducer` (no state library). Nothing is persisted; only the color scheme is stored (uiStore, `localStorage` key `tm.colorScheme`, wrapped in try/catch).
+React Context + `useReducer` (no state library). Nothing is persisted; only the color scheme is stored (FluentThemeProvider, `localStorage` key `tm.colorScheme`, wrapped in try/catch).
 
 ```ts
 type OnboardStatus = 'onboard' | 'inProgress' | 'offboard' | 'none';
@@ -197,66 +200,81 @@ Done: write `lastSubmission = { personName, kind, projectRequestCount }` to the 
 
 ## 6. Design system
 
-Tokens (`theme/tokens.css`, `:root`):
-- Spacing `--space-1..10` = 4, 8, 12, 16, 20, 24, 32, 40, 48, 64 px. Radius `--radius-sm 8px`, `--radius-card 14px`, `--radius-pill 999px`.
-- Shadows `--shadow-1..3`: layered, low-opacity neutral. Type: system stack (`"Segoe UI Variable", "Segoe UI", system-ui, sans-serif`); scale 12/14/16/18/22/28/36 px, weights 400/600/700.
-- Neutrals `--gray-0..900` (white to near-black). The only literal colors in the codebase live here and in `themeColors.ts` math. Layout: centered column `max-width: 720px`, full width under 600px.
+Base: **Fluent UI v9** (`@fluentui/react-components`) for every standard control, plus a thin custom layer for the section 11 "wow" pieces. Decided after F03 (reasons: built-in accessibility for the hardest controls, native Power Platform look, built-in light/dark theming, Microsoft-maintained). Styling uses Fluent's `makeStyles` + `tokens` (Griffel, included in the package); no CSS frameworks, no separate design-token files.
 
-Theme variables (set at runtime by `ThemeProvider` on `<html>`, from `getTheme()` + section 6 fallbacks):
-- `--tm-main` = rgba(R,G,B,A); `--tm-light` = fade(Main, Fade_Percentage); `--tm-medium` = fade(Main, Fade_Medium); fade = c + (255 - c) * p / 100.
-- Derived in `themeColors.ts`: `--tm-main-rgb` (for tints), `--tm-on-main`, `--tm-on-medium` (white when contrast >= 4.5:1, else `--gray-900`), `--tm-main-text` (Main darkened until it reaches 4.5:1 on white). Alpha is composited over the page background before contrast checks. Any switch away from white text is logged once to the console so F11 can report it.
-- Usage: header gradient Main -> Medium; primary button Medium fill, Main on hover, `--tm-on-medium` text; selected-person box Light fill + Main border; headings and status text use `--tm-main-text`.
-- Fallback colors are applied immediately (no flash), then replaced when the query returns.
+Colors (Sargent & Lundy brand, still no hard-coded brand colors):
+- S&L colors arrive through the 6 environment variables (spec section 7), set in Dev to the S&L palette. `config.ts` fallbacks switch to the official S&L values once supplied (open item); until then they stay at the spec values.
+- `theme/brandRamp.ts` turns Main into a Fluent `BrandVariants` ramp (keys 10-160): Main is composited over white (alpha), placed at 80; 10-70 step toward black, 90-160 fade toward white with the spec fade formula (`data/theme.ts`). Pure function, unit-tested.
+- `theme/FluentThemeProvider.tsx` loads `getTheme()` once, builds `createLightTheme(ramp)` / `createDarkTheme(ramp)` (dark: `colorBrandForeground1` = ramp 110, `colorBrandForeground2` = ramp 120, per spec section 7), and wraps the app in `FluentProvider`. Fallback theme renders immediately (no flash), then swaps when the query returns. If the query fails, the fallback theme stays and the error is logged.
+- No per-control overrides (spec section 7): Fluent primary buttons use the brand tokens as-is (Main fill, darker on hover/press). If white text fails AA on a brand shade, fix the ramp in `brandRamp.ts`; `whiteTextFailures()` checks shades 40/70/80 and the provider logs failures. Headers use the Main -> Medium gradient; the selected-person box uses Light fill + Main border (dark mode: `colorBrandBackground2` fill).
+- Header controls sit on the brand gradient through a nested `FluentProvider` with a partial theme (on-brand foregrounds, translucent subtle hover), not by restyling controls. Tooltips there use `appearance="inverted"`.
+- Main, Light and Medium are also written as CSS variables `--tm-main`, `--tm-light`, `--tm-medium` on the provider root for the custom layer (gradients, step line, confetti).
+- Dark mode: header toggle (sun/moon, `WeatherSunny`/`WeatherMoon` icons) switches between the two Fluent themes; light by default; choice stored in `localStorage` (`tm.colorScheme`, try/catch) by `FluentThemeProvider` (`useThemeMode()`). In dark mode, brand text uses ramp 100-120 until it reaches 4.5:1; badges use Fluent `Badge` tinted appearance + icon + text (never color alone). Any contrast fallback is logged once so F11 can report it.
 
-Dark mode: `html[data-theme="dark"]`, light by default, toggle in header (sun/moon). Neutral surfaces swap to dark grays; brand fills keep Main/Medium; Light becomes Main at 18% alpha over the dark surface; brand-colored text uses fade(Main, 45%) or lighter until 4.5:1 on the dark surface. Badges use tinted fill + icon + text (never color alone) and are contrast-checked in both modes.
+Fluent controls per spec element:
 
-Motion (CSS only, no animation library):
-- `--motion-fast 150ms`, `--motion-base 250ms`, `--ease-out cubic-bezier(.2,.8,.2,1)`. Animate only transform and opacity.
-- Page transition: AppShell keys the outlet by pathname and applies `enter-forward` (translateX 12px -> 0) or `enter-back` (-12px -> 0) with fade, from uiStore direction. Exit is instant, so navigation is never delayed.
-- Staggered lists (search results, review cards, success cards) use `animation-delay: calc(var(--i) * 40ms)`.
-- Loops only for skeleton shimmer, spinners and the In-Progress pulse.
-- `@media (prefers-reduced-motion: reduce)` sets distances to 0, removes keyframes except opacity fades; `useReducedMotion()` skips confetti and the check-draw.
-- Confetti: in-house `<Confetti/>` canvas burst (about 60 lines, theme colors, runs once).
+| Spec element | Fluent v9 control |
+|---|---|
+| Person search ("Search & Select User") | `Combobox` (freeform, server results, `Option` with name + email, `Avatar` initials) |
+| Role / Discipline | `Dropdown` with placeholder, `Field` for label + required + validation message |
+| Core, Full Time, Egnyte, Teams, Power Platform | `Switch` with state-dependent label |
+| Approx. Hrs/wk | `RadioGroup` (horizontal) or `ToggleButton` chips, in a `Field` |
+| Project pickers | `TagPicker` (searchable multi-select with removable tags) + live "N selected" `Text` |
+| Status pills | `Badge` (`tint`, icon); In-Progress gets the custom pulse |
+| Buttons / Home + Help icons | `Button` (`primary` / `secondary` / `subtle`), `Tooltip` for icon labels |
+| "Discard this request?" | `Dialog` |
+| Help panel | `OverlayDrawer` (position end) + `TabList` (Onboarding / Offboarding / Updating) |
+| Inline validation / page errors | `Field` validationMessage, `MessageBar` |
+| Submit failure with Retry | `Toaster` + `Toast` (intent error, Retry action) |
+| Loading / empty | `Spinner`, `Skeleton`, custom `EmptyState` (icon + one line) |
+| Cards (status, review, success) | `Card` + `CardHeader` |
 
-Icons: `lucide-react` (one set). Focus: 2px outline + offset using `--tm-main-text`, always visible on `:focus-visible`.
+Custom layer (built on Fluent tokens + `--tm-*` variables, in `components/`): `HeroBanner` (Home, slow animated gradient Main -> Medium, logo glow), `StepIndicator` (numbered dots, filling line, current-step pulse, check on done), `AppShell`/`Header` (Main -> Medium gradient, frosted blur when scrolled), `ReviewCard` stagger, `CheckDraw` (SVG stroke animation), `Confetti` (one canvas burst in theme colors, about 60 lines, no library).
 
-Proposed npm packages (each needs your EA approval per S&L rules; checked `@snl-business/ui` is not in this repo, see risk 8):
+Layout and type (spec section 13): sticky 64px header; content centered, `max-width: 1200px`, gutters 32/24/16px (desktop/tablet/phone); breakpoints phone < 640, tablet 640-1023, desktop >= 1024, wide >= 1440; wizard pages 2/3 form + 1/3 sticky RequestSummary on desktop, one column + collapsible Summary below desktop; PageActions sticky at the bottom below desktop; spacing from Fluent `tokens.spacing*` (4/8 grid); card radius `tokens.borderRadiusXLarge`, pills `borderRadiusCircular`; shadows `tokens.shadow4/8/16`; type from Fluent `typographyStyles` (Segoe UI).
+
+Motion: Fluent motion tokens (`tokens.durationNormal`, `tokens.curveDecelerateMid`) in Griffel keyframes; animate only transform and opacity. Page change: fade + 12px slide, direction from router location state set by `useAppNavigate` (browser Back = back), 200-300 ms, never delays navigation. Stagger via `animationDelay` per index (40 ms). Loops only for skeletons, spinners and the In-Progress pulse, plus the spec-required slow Home hero gradient (off under reduced motion); the step pulse runs 3 times. `@media (prefers-reduced-motion: reduce)` removes movement (fades only); `useReducedMotion()` skips confetti and check-draw. No motion preview packages.
+
+Icons: `@fluentui/react-icons` only (`bundleIcon` for Regular/Filled pairs). Focus: Fluent's built-in focus indicators (`createFocusOutlineStyle` for custom elements), always visible on keyboard focus.
+
+npm packages (each needs S&L EA approval; `@snl-business/ui` question still open):
 
 | Package | Type | Reason |
 |---|---|---|
+| @fluentui/react-components | runtime | Accessible controls, theming, makeStyles/tokens, dark mode |
+| @fluentui/react-icons | runtime | The one icon set, matches Fluent |
 | react-router-dom | runtime | Routes, guards, browser Back/history |
-| lucide-react | runtime | One tree-shakable icon set |
 | vitest | dev | Test runner native to Vite |
 | @testing-library/react, @testing-library/user-event, @testing-library/jest-dom | dev | Component tests in the S&L standard style |
 | jsdom | dev | Browser environment for tests |
 | eslint-plugin-jsx-a11y | dev | Catches missing labels and roles during lint (F11) |
 
-Not proposed: state libraries, UI kits (Fluent, MUI), Framer Motion, confetti libraries, date/utility libraries.
+Not proposed: lucide-react (replaced by Fluent icons), Fluent motion preview packages, state libraries, other UI kits, Framer Motion, confetti libraries.
 
 ## 7. Feature-to-file map
 
 | Feature | Creates | Changes |
 |---|---|---|
-| F02 scaffold | Microsoft Vite template files, `power.config.json` (via `pa app init`), `BUILD_LOG.md` row | `package.json` (scripts: typecheck, lint, test placeholder), `tsconfig.json` (strict), `CLAUDE.md` |
-| F03 data layer | `src/generated/**` (CLI), `src/config.ts`, `src/data/*`, `src/pages/DiagnosticsPage/*` (temporary) | `App.tsx` (diagnostics route), this file section 4 if names differ |
-| F04 shell + design system + Home + Under Construction | `theme/*`, `state/requestStore.tsx`, `state/uiStore.tsx`, `routes.tsx`, `components/{AppShell,Header,StepIndicator,PageActions,Button,IconButton,Card,ConfirmDialog,EmptyState,Skeleton}`, `pages/{HomePage,UnderConstructionPage}`, placeholder pages for every route | `App.tsx`, `main.tsx`; deletes `DiagnosticsPage` |
-| F05 person search + status | `hooks/{useDebouncedValue,usePersonSearch,useAnnounce,useStepGuard}`, `components/{PersonSearchBox,Avatar,StatusBadge,SelectedPersonBox}`, `pages/{PersonSearchPage,StatusPage}` | `routes.tsx` (guards) |
-| F06 new-user Details/Projects/Review UI | `components/{Select,Toggle,ChipGroup,ProjectMultiSelect,FieldError,ReviewCard}`, `pages/{NewDetailsPage,NewProjectsPage,NewReviewPage}` | `requestStore.tsx` (selectors) |
-| F07 new-user submit W1-W3 | `state/submitStore.tsx`, `components/Toast` | `NewReviewPage`, `data/payloads.ts` (if F03 left gaps), `routes.tsx` (lock guards) |
-| F08 existing path + W4 + Success + reset | `pages/{ExistingProjectsPage,ExistingReviewPage,SuccessPage}`, `components/{Confetti,CheckDraw}` | `submitStore.tsx` (submitExisting, lastSubmission), `Header` (dirty confirm) |
-| F09 help | `content/helpContent.ts`, `components/{HelpContent,HelpPanel}`, `pages/{HelpHomePage,HelpTopicPage}` | `Header`, `uiStore.tsx` (panel state) |
-| F10 motion + polish | `hooks/{useReducedMotion,useScrolled}` | `theme/*.css`, component and page styles |
-| F11 accessibility + copy | - | Labels, aria-live, focus order, copy fixes across pages/components; `.eslintrc` (jsx-a11y) |
+| F02 scaffold | Done in Phase 0 (template, `power.config.json`, `CLAUDE.md`, `BUILD_LOG.md`) | - |
+| F03 data layer | Done: `src/generated/**`, `.power/**`, `src/config.ts`, `src/data/*`, `pages/DiagnosticsPage` (temporary) | `App.tsx` (temporary hash route) |
+| F04 shell + design system + Home + Under Construction | Done: installed Fluent + icons + react-router-dom + test/a11y dev packages; `theme/{brandRamp.ts,FluentThemeProvider.tsx,layout.ts,global.css}`, `state/{request.ts,requestStore.tsx,guards.ts}`, `routes.tsx`, `routeElements.tsx`, `hooks/{useAppNavigate,useMediaQuery,useScrolled}`, `components/{AppShell,Header,StepIndicator,PageActions,WizardLayout,RequestSummary,SelectedPersonBox,HeroBanner}`, `pages/{HomePage,UnderConstructionPage,PlaceholderPage}`, `vitest.config.ts`, 2 tests | `App.tsx`, `main.tsx`, `index.html`, `eslint.config.js` (jsx-a11y), `package.json`; deleted `DiagnosticsPage` and template assets |
+| F05 person search + status | `hooks/{useDebouncedValue,usePersonSearch,useAnnounce}`, Fluent `Combobox` + `Badge` in `pages/{PersonSearchPage,StatusPage}` | `routes.tsx` (replace placeholders) |
+| F06 new-user Details/Projects/Review UI | `components/{ProjectPicker (TagPicker),HoursPicker,AccessSwitch,ReviewCard}`, `pages/{NewDetailsPage,NewProjectsPage,NewReviewPage}` | `requestStore.tsx` (selectors) |
+| F07 new-user submit W1-W3 | `state/submitStore.tsx`; Fluent `Toast` with Retry via `TOASTER_ID` (Toaster already in AppShell) | `NewReviewPage`, `state/guards.ts` (lock guards) |
+| F08 existing path + W4 + Success + reset | `pages/{ExistingProjectsPage,ExistingReviewPage,SuccessPage}`, `components/{Confetti,CheckDraw}` | `submitStore.tsx` (submitExisting, lastSubmission), `Header` (Dialog for dirty confirm) |
+| F09 help | `content/helpContent.ts`, `components/HelpContent`, `pages/{HelpHomePage,HelpTopicPage}` | `AppShell` (fill the placeholder OverlayDrawer tabs), `routeElements.tsx` |
+| F10 motion + polish | `hooks/{useReducedMotion,useScrolled}`, `theme/motion.ts` (shared Griffel keyframes) | Component and page `makeStyles` |
+| F11 accessibility + copy | - | Labels, aria-live, focus order, contrast fallbacks, copy fixes; `eslint.config.js` (jsx-a11y) |
 | F12 review gate | `docs/REVIEW_GATE.md` (audit: filters/limits on every query, no forbidden writes, no hard-coded colors, no table changes) | Fixes found by the audit |
-| F13 tests + handoff | `*.test.ts(x)` beside units (themeColors, queries, payloads, requestStore, submitStore runner, key pages), `vitest.config.ts`, `HANDOFF.md` | `package.json` (test script) |
+| F13 tests + handoff | `*.test.ts(x)` beside units (brandRamp, data/theme, queries, payloads, requestStore, submitStore runner, key pages), `vitest.config.ts`, `HANDOFF.md` | `package.json` (test script) |
 
 ## 8. Risks and open questions
 
-1. **Generated names unknown.** Service/method names, result shape, and lookup navigation casing (`mpm_User` vs `mpm_user`) are unconfirmed until F03. F03 must stop if any section 5 column is missing or renamed.
-2. **Theme "one query".** Spec asks for one query; the plan uses two parallel queries (definitions, then values) because expand isn't documented for generated services. If F03 finds expand support, switch to one.
+1. **S&L brand values.** Official S&L colors are still needed for the Dev environment variables and the `config.ts` fallbacks. Until then the spec fallbacks (0, 51, 160) are used.
+2. **Fluent theme fit.** Fluent derives many tokens from the brand ramp; a generated ramp from an arbitrary Main can produce weak hover/pressed or dark-mode shades. F04 must eyeball both modes and F11 must contrast-check them. (Resolved in F03: generated names confirmed; theme = 2 batched queries, user-approved.)
 3. **Project volume.** Both lists load up to 2000 rows and search in the browser. If Dev has more projects, the existing path needs server-side type-ahead like person search.
 4. **Hash routing in the host.** Assumes browser Back works inside the Power Apps player iframe with hash URLs. Verify at the F05 checkpoint.
 5. **W1 permission.** Users need write on `systemuser.mpm_onboard`; if Dev roles block it, F07 is blocked (spec forbids workarounds).
 6. **Lost response on create.** If a create succeeds but the response is lost (timeout), Retry will create a duplicate row and a second flow run. The app can't detect this without an idempotency key; flows owners should be asked.
 7. **Theme contrast.** Environment colors are arbitrary; white on Medium may fail AA. Auto-switch to dark text is planned and will be reported.
-8. **Approvals and scope.** New packages need EA approval; confirm whether `@snl-business/ui` must be used instead. "F12 review gate" is interpreted as the hard-rules audit; confirm.
+8. **Approvals and scope.** `@fluentui/react-components`, `@fluentui/react-icons` and `react-router-dom` need EA approval before F04 installs them; confirm whether `@snl-business/ui` must be used instead of or alongside Fluent. "F12 review gate" is interpreted as the hard-rules audit; confirm.

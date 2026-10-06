@@ -50,7 +50,35 @@ export const FEATURE_FLAGS = {
   D3_EXCLUDE_DISABLED_AND_NON_INTERACTIVE_USERS: false,
 } as const;
 
+// Layout breakpoints in px (spec section 6) and content width (spec section 13).
+export const BREAKPOINTS = {
+  TABLET: 640,
+  DESKTOP: 1024,
+  WIDE: 1440,
+} as const;
+export const CONTENT_MAX_WIDTH = 1200;
+
+// Hash routes (spec section 13). Pages link to these, never to string literals.
+export const ROUTES = {
+  HOME: '/',
+  UNDER_CONSTRUCTION: '/under-construction',
+  PERSON: '/person',
+  STATUS: '/status',
+  NEW_DETAILS: '/new/details',
+  NEW_PROJECTS: '/new/projects',
+  NEW_REVIEW: '/new/review',
+  EXISTING_PROJECTS: '/existing/projects',
+  EXISTING_REVIEW: '/existing/review',
+  SUCCESS: '/success',
+  HELP: '/help',
+  HELP_TOPIC: '/help/:topic',
+} as const;
+
+// Device-local preference key (the only persisted value).
+export const COLOR_SCHEME_STORAGE_KEY = 'tm.colorScheme';
+
 // Theme environment variables, by definition display name, with fallbacks (spec section 7).
+// TODO-BRAND: replace these fallbacks with the official S&L brand values when supplied.
 export const THEME_VARIABLES = {
   red: { displayName: 'Color_Main_RGBA-Red', fallback: 0 },
   green: { displayName: 'Color_Main_RGBA-Green', fallback: 51 },
