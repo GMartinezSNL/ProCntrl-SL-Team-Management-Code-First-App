@@ -1,0 +1,36 @@
+{
+  "autoMemoryEnabled": true,
+
+  "permissions": {
+    "allow": [
+      "Read",
+      "Grep",
+      "Glob",
+      "Bash(cd*)",
+      "Bash(pwd)",
+      "Bash(ls*)",
+      "Bash(grep*)",
+      "Bash(rg*)",
+      "Bash(cat*)",
+      "Bash(head*)",
+      "Bash(tail*)",
+      "Bash(find*)",
+      "Bash(wc*)",
+      "Bash(file*)",
+      "Bash(tree*)",
+      "Bash(git status)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(pip install*)",
+      "Bash(pip3 install*)",
+      "Bash(python -m pip install*)",
+      "Bash(uv pip install*)",
+      "Bash(uv add*)"
+    ],
+    "ask": [
+      "Write",
+      "Edit"
+    ],
+    "deny": []
+  }
+}
