@@ -8,6 +8,7 @@ import {
   Mpm_disciplinesService,
   Mpm_rolesService,
   Mpm_teammanagementrequestsService,
+  OrganizationsService,
   SystemusersService,
 } from '../generated';
 import type { Cre9c_projects } from '../generated/models/Cre9c_projectsModel';
@@ -85,6 +86,14 @@ export async function getCurrentUser(): Promise<CurrentUser> {
     userPrincipalName: user.userPrincipalName || null,
     systemUserId: user.systemUserId || null,
   };
+}
+
+// Each project has its own environment; the organization row's name tells the user which one.
+export async function getEnvironmentName(): Promise<string> {
+  const rows = await unwrap('organization', 'read', OrganizationsService.getAll({ select: ['name'], top: 1 }));
+  const name = rows[0]?.name;
+  if (!name) throw new DataError('organization', 'read', new Error('No organization name returned'));
+  return name;
 }
 
 // Two batched queries (definitions, then their values); generated services have no expand option.

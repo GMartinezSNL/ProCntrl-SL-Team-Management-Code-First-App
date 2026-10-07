@@ -14,6 +14,7 @@ import {
 import { Home24Regular, QuestionCircle24Regular, WeatherMoon24Regular, WeatherSunny24Regular } from '@fluentui/react-icons';
 import { useThemeMode } from '../../theme/FluentThemeProvider';
 import { MEDIA } from '../../theme/layout';
+import { useEnvironmentName } from '../../hooks/useEnvironmentName';
 import { useScrolled } from '../../hooks/useScrolled';
 
 export const HEADER_HEIGHT = 64;
@@ -75,6 +76,16 @@ const useStyles = makeStyles({
     overflow: 'hidden',
     textOverflow: 'ellipsis',
   },
+  // Which project's environment this copy of the app runs in; each project has its own.
+  environment: {
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    paddingInlineStart: tokens.spacingHorizontalS,
+    borderInlineStartWidth: '1px',
+    borderInlineStartStyle: 'solid',
+    borderInlineStartColor: tokens.colorNeutralForegroundOnBrand,
+  },
   userName: {
     whiteSpace: 'nowrap',
     marginInlineEnd: tokens.spacingHorizontalS,
@@ -93,6 +104,7 @@ export function Header({ userName, onHomeClick, onHelpClick, helpButtonRef }: He
   const styles = useStyles();
   const { colorScheme, toggleColorScheme } = useThemeMode();
   const isScrolled = useScrolled();
+  const environmentName = useEnvironmentName();
   const isDark = colorScheme === 'dark';
   const toggleLabel = isDark ? 'Switch to light mode' : 'Switch to dark mode';
 
@@ -106,6 +118,12 @@ export function Header({ userName, onHomeClick, onHelpClick, helpButtonRef }: He
           <Text weight="semibold" size={400} className={styles.appName}>
             Team Management
           </Text>
+          {environmentName && (
+            <Text size={300} className={styles.environment}>
+              <span className="visually-hidden">Environment: </span>
+              {environmentName}
+            </Text>
+          )}
         </div>
         <div className={styles.group}>
           {userName && (

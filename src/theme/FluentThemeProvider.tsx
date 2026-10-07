@@ -75,8 +75,10 @@ export function FluentThemeProvider({ children }: { children: ReactNode }) {
 
   return (
     <ThemeModeContext.Provider value={modeValue}>
-      <FluentProvider theme={themes[colorScheme]} style={cssVariables} className={styles.root}>
-        {children}
+      <FluentProvider theme={themes[colorScheme]} style={cssVariables}>
+        {/* Height lives on this wrapper, not the provider: Fluent copies provider classes onto every
+            popup layer, and a full-height opaque layer covers the page whenever a popup opens. */}
+        <div className={styles.root}>{children}</div>
       </FluentProvider>
     </ThemeModeContext.Provider>
   );

@@ -48,6 +48,11 @@
           "entitySetName": "environmentvariablevalues",
           "logicalName": "environmentvariablevalue",
           "isHidden": false
+        },
+        "organizations": {
+          "entitySetName": "organizations",
+          "logicalName": "organization",
+          "isHidden": false
         }
       },
       "environmentVariableName": ""

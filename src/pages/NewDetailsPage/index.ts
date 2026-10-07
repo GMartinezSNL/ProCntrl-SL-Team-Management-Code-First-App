@@ -1,0 +1,1 @@
+export { NewDetailsPage } from './NewDetailsPage';

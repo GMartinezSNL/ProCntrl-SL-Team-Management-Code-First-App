@@ -2,6 +2,7 @@
 // so a person with one of those statuses is always present here.
 import {
   Body1,
+  Body1Strong,
   Button,
   Card,
   CardFooter,
@@ -16,6 +17,7 @@ import { ROUTES } from '../../config';
 import { PageActions } from '../../components/PageActions';
 import { PersonStatusBadge, SelectedPersonBox } from '../../components/SelectedPersonBox';
 import { useAppNavigate } from '../../hooks/useAppNavigate';
+import { useEnvironmentName } from '../../hooks/useEnvironmentName';
 import { useRequest } from '../../state/requestStore';
 
 const ONBOARDED_MESSAGE = 'The user selected is already onboarded to the environment. Select an option below.';
@@ -62,6 +64,7 @@ export function StatusPage() {
   const navigate = useAppNavigate();
   const { state, dispatch, reset } = useRequest();
   const { person } = state;
+  const environmentName = useEnvironmentName();
   if (!person) return null;
 
   const goHome = () => {
@@ -85,6 +88,11 @@ export function StatusPage() {
         </Subtitle2>
         <div className={styles.body}>
           <Body1>{person.status === 'inProgress' ? IN_PROGRESS_MESSAGE : ONBOARDED_MESSAGE}</Body1>
+          {environmentName && (
+            <Body1>
+              <Body1Strong>Environment:</Body1Strong> {environmentName}
+            </Body1>
+          )}
           <SelectedPersonBox fullName={person.fullName} email={person.email}>
             <PersonStatusBadge status={person.status} />
           </SelectedPersonBox>

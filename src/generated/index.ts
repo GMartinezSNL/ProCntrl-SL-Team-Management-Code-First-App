@@ -11,6 +11,7 @@ export * as EnvironmentvariablevaluesModel from './models/Environmentvariableval
 export * as Mpm_disciplinesModel from './models/Mpm_disciplinesModel';
 export * as Mpm_rolesModel from './models/Mpm_rolesModel';
 export * as Mpm_teammanagementrequestsModel from './models/Mpm_teammanagementrequestsModel';
+export * as OrganizationsModel from './models/OrganizationsModel';
 export * as SystemusersModel from './models/SystemusersModel';
 
 // Services
@@ -20,4 +21,5 @@ export * from './services/EnvironmentvariablevaluesService';
 export * from './services/Mpm_disciplinesService';
 export * from './services/Mpm_rolesService';
 export * from './services/Mpm_teammanagementrequestsService';
+export * from './services/OrganizationsService';
 export * from './services/SystemusersService';

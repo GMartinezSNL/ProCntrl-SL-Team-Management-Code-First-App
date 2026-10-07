@@ -207,7 +207,11 @@ export function PersonSearchPage() {
             className={styles.combobox}
             listbox={{ className: styles.listbox }}
             freeform
-            placeholder="Start typing a name"
+            placeholder="Search by first or last name"
+            // A search box, not a dropdown: no chevron, results appear after 2 letters (F13).
+            expandIcon={null}
+            // The options are server results; the browser's own autofill list must not compete with them.
+            autoComplete="off"
             value={text}
             selectedOptions={person ? [person.id] : []}
             open={isOpen}

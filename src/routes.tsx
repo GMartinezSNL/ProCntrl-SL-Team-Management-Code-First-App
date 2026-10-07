@@ -3,8 +3,11 @@
 import { Navigate, createHashRouter } from 'react-router-dom';
 import { ROUTES } from './config';
 import { AppShell } from './components/AppShell';
-import { EXISTING_PATH_STEPS, NEW_PATH_STEPS } from './components/WizardLayout';
+import { EXISTING_PATH_STEPS } from './components/WizardLayout';
 import { HomePage } from './pages/HomePage';
+import { NewDetailsPage } from './pages/NewDetailsPage';
+import { NewProjectsPage } from './pages/NewProjectsPage';
+import { NewReviewPage } from './pages/NewReviewPage';
 import { PersonSearchPage } from './pages/PersonSearchPage';
 import { StatusPage } from './pages/StatusPage';
 import { SimplePlaceholder, WizardPlaceholder } from './pages/PlaceholderPage';
@@ -29,7 +32,7 @@ export const router = createHashRouter([
         path: ROUTES.NEW_DETAILS,
         element: (
           <Guard page="newDetails">
-            <WizardPlaceholder title="Onboard User" steps={NEW_PATH_STEPS} current={1} backTo={ROUTES.PERSON} builtIn="F06" />
+            <NewDetailsPage />
           </Guard>
         ),
       },
@@ -37,7 +40,7 @@ export const router = createHashRouter([
         path: ROUTES.NEW_PROJECTS,
         element: (
           <Guard page="newProjects">
-            <WizardPlaceholder title="Onboard User" steps={NEW_PATH_STEPS} current={2} backTo={ROUTES.NEW_DETAILS} builtIn="F06" />
+            <NewProjectsPage />
           </Guard>
         ),
       },
@@ -45,7 +48,7 @@ export const router = createHashRouter([
         path: ROUTES.NEW_REVIEW,
         element: (
           <Guard page="newReview">
-            <WizardPlaceholder title="Onboard User" steps={NEW_PATH_STEPS} current={3} backTo={ROUTES.NEW_DETAILS} builtIn="F06" />
+            <NewReviewPage />
           </Guard>
         ),
       },

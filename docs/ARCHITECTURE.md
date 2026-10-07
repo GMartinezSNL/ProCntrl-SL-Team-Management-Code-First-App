@@ -133,6 +133,7 @@ Confirmed in F03 (`src/generated/services`, all static classes with `create`, `u
 | mpm_teammanagementrequest | `Mpm_teammanagementrequestsService` | `Mpm_teammanagementrequests` | - |
 | environmentvariabledefinition | `EnvironmentvariabledefinitionsService` | `Environmentvariabledefinitions` | - |
 | environmentvariablevalue | `EnvironmentvariablevaluesService` | `Environmentvariablevalues` | - |
+| organization | `OrganizationsService` | `Organizations` | - |
 
 Request lookups (exact casing): `mpm_User@odata.bind`, `mpm_Project@odata.bind`, `mpm_Role@odata.bind`, `mpm_Discipline@odata.bind`. Choice/flag names match the spec: `mpm_sldisc`, `mpm_nda`. The generated create type marks `mpm_number` and `statecode` as required; `createRequest()` casts the allowlisted payload at that one boundary so neither is ever sent. Signed-in user comes from `getContext()` in `@microsoft/power-apps/app` (`user.fullName`, `userPrincipalName`, `systemUserId`). Extra read added in F03: `searchProjects(text, ndaOnly)`, server-side `contains(cre9c_projectnumber, t)` with `PROJECT_SEARCH` limits (2 chars, 300 ms, 50 rows; mirrors person search because the spec defines none).
 
@@ -156,6 +157,7 @@ createExistingProjectRequest(userId: string, projectId: string): Promise<string>
 | getTheme (query B) | environmentvariablevalue | value, _environmentvariabledefinitionid_value | definition id eq each id from A (OR) | - | 12 |
 | searchUsers | systemuser | systemuserid, fullname, internalemailaddress, mpm_onboard | `startswith(firstname,t) or startswith(lastname,t) or contains(fullname,t)`; D3 on adds `isdisabled eq false and accessmode ne 4` | fullname asc | 50 |
 | getUserStatus | systemuser (by id) | mpm_onboard | systemuserid | - | 1 |
+| getEnvironmentName | organization | name | - (one row per environment) | - | 1 |
 | getRoles | mpm_role | mpm_roleid, mpm_role | statecode eq 0 | mpm_role asc | 500 |
 | getSlDisciplines | mpm_discipline | mpm_disciplineid, mpm_slname | mpm_sldisc eq 865540000 and statecode eq 0 | mpm_slname asc | 500 |
 | getNdaProjects | cre9c_project | cre9c_projectid, cre9c_projectnumber, mpm_nda, at_projectstatus | mpm_nda eq true; D2 adds `at_projectstatus ne 120990001` | cre9c_projectnumber asc | PROJECT_MAX (2000) |
@@ -278,3 +280,4 @@ Not proposed: lucide-react (replaced by Fluent icons), Fluent motion preview pac
 6. **Lost response on create.** If a create succeeds but the response is lost (timeout), Retry will create a duplicate row and a second flow run. The app can't detect this without an idempotency key; flows owners should be asked.
 7. **Theme contrast.** Environment colors are arbitrary; white on Medium may fail AA. Auto-switch to dark text is planned and will be reported.
 8. **Approvals and scope.** `@fluentui/react-components`, `@fluentui/react-icons` and `react-router-dom` need EA approval before F04 installs them; confirm whether `@snl-business/ui` must be used instead of or alongside Fluent. "F12 review gate" is interpreted as the hard-rules audit; confirm.
+9. **One environment per project (decided in F05).** Each project has its own environment and Dataverse, with the same security roles everywhere; the app is deployed into each one and only ever sees that project's data, so it does no project filtering of its own. To show users which project they are in, `getEnvironmentName()` reads `organization.name` (user-approved addition of the organization table, outside spec section 5) and `useEnvironmentName` shares it: shown in the header and as an "Environment:" line on Status (spec section 8 messages unchanged). If it can't be read, the error is logged and the name is simply not shown.
