@@ -5,6 +5,8 @@ import { ROUTES } from './config';
 import { AppShell } from './components/AppShell';
 import { EXISTING_PATH_STEPS, NEW_PATH_STEPS } from './components/WizardLayout';
 import { HomePage } from './pages/HomePage';
+import { PersonSearchPage } from './pages/PersonSearchPage';
+import { StatusPage } from './pages/StatusPage';
 import { SimplePlaceholder, WizardPlaceholder } from './pages/PlaceholderPage';
 import { UnderConstructionPage } from './pages/UnderConstructionPage';
 import { Guard, HelpTopicRoute } from './routeElements';
@@ -14,15 +16,12 @@ export const router = createHashRouter([
     children: [
       { path: ROUTES.HOME, element: <HomePage /> },
       { path: ROUTES.UNDER_CONSTRUCTION, element: <UnderConstructionPage /> },
-      {
-        path: ROUTES.PERSON,
-        element: <WizardPlaceholder title="Onboard User" steps={NEW_PATH_STEPS} current={0} backTo={ROUTES.HOME} builtIn="F05" />,
-      },
+      { path: ROUTES.PERSON, element: <PersonSearchPage /> },
       {
         path: ROUTES.STATUS,
         element: (
           <Guard page="status">
-            <SimplePlaceholder title="Onboard Team Member" backTo={ROUTES.PERSON} builtIn="F05" />
+            <StatusPage />
           </Guard>
         ),
       },
